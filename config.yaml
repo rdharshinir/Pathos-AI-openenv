@@ -1,0 +1,10 @@
+name: grid_treasure_hunt
+description: Simple RL grid game where agent finds treasure avoiding traps
+
+actions:
+  - up
+  - down
+  - left
+  - right
+
+max_steps: 50
