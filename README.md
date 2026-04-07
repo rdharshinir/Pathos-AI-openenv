@@ -1,255 +1,155 @@
 ---
-title: My Env Environment Server
-emoji: 🎯
+title: Pathos AI – Autonomous Drone Rescue Simulator
+emoji: 🚁
 colorFrom: blue
-colorTo: red
+colorTo: purple
 sdk: docker
-pinned: false
-app_port: 8000
-base_path: /web
-tags:
-  - openenv
+pinned: true
+license: mit
+short_description: Grid-world RL environment for autonomous drone rescue with curriculum learning
 ---
 
-# My Env Environment
+# 🚁 Pathos AI — Autonomous Drone Rescue Simulator
 
-A simple test environment that echoes back messages. Perfect for testing the env APIs as well as demonstrating environment usage patterns.
+**A high-utility, evaluator-ready Reinforcement Learning environment for training and benchmarking autonomous agents in disaster-response scenarios.**
 
-## Quick Start
+[![Running](https://img.shields.io/badge/status-running-brightgreen)]()
+[![OpenEnv](https://img.shields.io/badge/framework-OpenEnv-blue)]()
+[![Curriculum](https://img.shields.io/badge/curriculum-4%20levels-orange)]()
 
-The simplest way to use the My Env environment is through the `MyEnv` class:
+---
 
-```python
-from my_env import MyAction, MyEnv
+## 🎯 Real-World Utility
 
-try:
-    # Create environment from Docker image
-    my_envenv = MyEnv.from_docker_image("my_env-env:latest")
+Pathos AI simulates **disaster-zone drone navigation** — the exact kind of autonomy needed in real search-and-rescue operations. An autonomous agent must:
 
-    # Reset
-    result = my_envenv.reset()
-    print(f"Reset: {result.observation.echoed_message}")
+- 🚁 Navigate hazardous terrain without GPS (grid-world)
+- 🆘 Rescue survivors before reaching the extraction zone
+- ☣️ Avoid static hazards and 🔥 dynamically spreading fires
+- 🌪️ Handle wind zones that push the drone off course
+- 🌫️ Operate under fog-of-war with limited visibility
 
-    # Send multiple messages
-    messages = ["Hello, World!", "Testing echo", "Final message"]
+This directly mirrors real autonomous UAV challenges in wildfire response, earthquake rescue, and military operations.
 
-    for msg in messages:
-        result = my_envenv.step(MyAction(message=msg))
-        print(f"Sent: '{msg}'")
-        print(f"  → Echoed: '{result.observation.echoed_message}'")
-        print(f"  → Length: {result.observation.message_length}")
-        print(f"  → Reward: {result.reward}")
+---
 
-finally:
-    # Always clean up
-    my_envenv.close()
-```
+## 🎮 Visual Dashboard (NEW)
 
-That's it! The `MyEnv.from_docker_image()` method handles:
-- Starting the Docker container
-- Waiting for the server to be ready
-- Connecting to the environment
-- Container cleanup when you call `close()`
+Access the full visual interface at: **`/ui`**
 
-## Building the Docker Image
+| Feature | Description |
+|---|---|
+| 🗺️ **Live SVG Grid** | Color-coded, animated drone movement with hover coordinates |
+| 📊 **Reward Curve** | Real-time Chart.js line chart over last 50 episodes |
+| 🔥 **Visit Heatmap** | Canvas-based frequency heatmap of drone positions |
+| 🎯 **Objective Tracker** | Live status of all 3 tiered objectives |
+| 🔄 **Replay System** | Step-by-step playback of current/best/worst episodes |
+| 🗒️ **Scenario Editor** | Place hazards, save/load JSON map seeds |
+| 🏆 **Leaderboard** | Submit agent scores, top-10 ranking table |
 
-Before using the environment, you need to build the Docker image:
+**Controls:** WASD / Arrow keys, or type natural language ("go north")
 
-```bash
-# From project root
-docker build -t my_env-env:latest -f server/Dockerfile .
-```
+---
 
-## Deploying to Hugging Face Spaces
+## 📐 Environment Design
 
-You can easily deploy your OpenEnv environment to Hugging Face Spaces using the `openenv push` command:
+### Curriculum Learning — 4 Levels
 
-```bash
-# From the environment directory (where openenv.yaml is located)
-openenv push
+| Level | Label | Grid | Map Type | Features |
+|---|---|---|---|---|
+| 1 | 🟢 Rookie | 5×5 | Open | Fixed layout, no hazards |
+| 2 | 🔵 Trained | 7×7 | Sparse | 3 static hazards, random start |
+| 3 | 🟠 Expert | 10×10 | Maze | Moving hazards + fog of war |
+| 4 | 🔴 Legendary | 10×10 | Adversarial | Wind zones + multi-hazard + fog |
 
-# Or specify options
-openenv push --namespace my-org --private
-```
+### Tiered Objectives
 
-The `openenv push` command will:
-1. Validate that the directory is an OpenEnv environment (checks for `openenv.yaml`)
-2. Prepare a custom build for Hugging Face Docker space (enables web interface)
-3. Upload to Hugging Face (ensuring you're logged in)
+| Objective | Reward |
+|---|---|
+| 🏥 Reach Extraction Zone | **+10.0** |
+| 🆘 Rescue each Survivor | **+0.3** |
+| ⚡ Speed Bonus (≤10 steps) | **+0.5** |
+| 🪫 Step Penalty | **-0.1** per step |
+| ☣️ Hit Hazard | **-10.0** (fatal) |
 
-### Prerequisites
+### Dynamic Mechanics
+- **🔥 Moving Fires** – hazards that shift randomly each step (adversarial map)
+- **🌪️ Wind Zones** – cells that push the drone one extra random step (Legendary only)
+- **🌫️ Fog of War** – only cells within radius-2 are visible (Expert & Legendary)
+- **🧱 Maze Walls** – procedurally generated via recursive backtracking (Expert)
 
-- Authenticate with Hugging Face: The command will prompt for login if not already authenticated
+---
 
-### Options
+## 🔌 API Endpoints
 
-- `--directory`, `-d`: Directory containing the OpenEnv environment (defaults to current directory)
-- `--repo-id`, `-r`: Repository ID in format 'username/repo-name' (defaults to 'username/env-name' from openenv.yaml)
-- `--base-image`, `-b`: Base Docker image to use (overrides Dockerfile FROM)
-- `--private`: Deploy the space as private (default: public)
+### Standard OpenEnv
+| Endpoint | Description |
+|---|---|
+| `POST /reset` | Reset episode (pass `difficulty: 1-4`) |
+| `POST /step` | Step with natural language action |
+| `GET /state` | Current environment state |
 
-### Examples
+### Extended Hackathon API
+| Endpoint | Description |
+|---|---|
+| `GET /ui` | Visual dashboard |
+| `GET /grid_ui/{id}` | SVG cell data for renderer |
+| `GET /heatmap/{id}` | Visit frequency heatmap |
+| `GET /replay/{id}` | Trajectory replay data |
+| `GET /export_layout/{id}` | Export map as JSON seed |
+| `POST /load_layout/{id}` | Load scenario from JSON seed |
+| `GET /leaderboard` | Top-10 agent leaderboard |
+| `POST /submit_score` | Submit agent score |
+| `GET /episode_stats` | Reward curve data (last 50 ep) |
 
-```bash
-# Push to your personal namespace (defaults to username/env-name from openenv.yaml)
-openenv push
+---
 
-# Push to a specific repository
-openenv push --repo-id my-org/my-env
-
-# Push with a custom base image
-openenv push --base-image ghcr.io/meta-pytorch/openenv-base:latest
-
-# Push as a private space
-openenv push --private
-
-# Combine options
-openenv push --repo-id my-org/my-env --base-image custom-base:latest --private
-```
-
-After deployment, your space will be available at:
-`https://huggingface.co/spaces/<repo-id>`
-
-The deployed space includes:
-- **Web Interface** at `/web` - Interactive UI for exploring the environment
-- **API Documentation** at `/docs` - Full OpenAPI/Swagger interface
-- **Health Check** at `/health` - Container health monitoring
-- **WebSocket** at `/ws` - Persistent session endpoint for low-latency interactions
-
-## Environment Details
-
-### Action
-**MyAction**: Contains a single field
-- `message` (str) - The message to echo back
-
-### Observation
-**MyObservation**: Contains the echo response and metadata
-- `echoed_message` (str) - The message echoed back
-- `message_length` (int) - Length of the message
-- `reward` (float) - Reward based on message length (length × 0.1)
-- `done` (bool) - Always False for echo environment
-- `metadata` (dict) - Additional info like step count
-
-### Reward
-The reward is calculated as: `message_length × 0.1`
-- "Hi" → reward: 0.2
-- "Hello, World!" → reward: 1.3
-- Empty message → reward: 0.0
-
-## Advanced Usage
-
-### Connecting to an Existing Server
-
-If you already have a My Env environment server running, you can connect directly:
+## 🐍 Python Client
 
 ```python
-from my_env import MyEnv
+from gridmind import MyEnv, MyAction
 
-# Connect to existing server
-my_envenv = MyEnv(base_url="<ENV_HTTP_URL_HERE>")
+with MyEnv.from_env("DHARSHINI-457/my_env") as env:
+    result = await env.reset(difficulty=2)  # Level 2: Trained
 
-# Use as normal
-result = my_envenv.reset()
-result = my_envenv.step(MyAction(message="Hello!"))
+    while not result.done:
+        obs = result.structured
+        direction = obs["direction_to_extraction"]
+        result = await env.step(MyAction(message=f"go {direction}"))
+
+    print(f"Score: {result.objectives['total_score']:.2f}")
+    print(f"Survivors: {result.objectives['survivors_rescued']}")
 ```
 
-Note: When connecting to an existing server, `my_envenv.close()` will NOT stop the server.
+---
 
-### Using the Context Manager
+## 📊 Grading Rubric
 
-The client supports context manager usage for automatic connection management:
+The `grader.py` provides deterministic scoring:
 
-```python
-from my_env import MyAction, MyEnv
-
-# Connect with context manager (auto-connects and closes)
-with MyEnv(base_url="http://localhost:8000") as env:
-    result = env.reset()
-    print(f"Reset: {result.observation.echoed_message}")
-    # Multiple steps with low latency
-    for msg in ["Hello", "World", "!"]:
-        result = env.step(MyAction(message=msg))
-        print(f"Echoed: {result.observation.echoed_message}")
+```
+Success:  score = 0.5 + 0.5 × efficiency + speed_bonus + survivor_bonus
+Failure:  score = 0.4 × closeness_to_goal + survivor_bonus
 ```
 
-The client uses WebSocket connections for:
-- **Lower latency**: No HTTP connection overhead per request
-- **Persistent session**: Server maintains your environment state
-- **Efficient for episodes**: Better for many sequential steps
+Tasks are exported as `grader.tasks` with all 4 curriculum levels.
 
-### Concurrent WebSocket Sessions
+---
 
-The server supports multiple concurrent WebSocket connections. To enable this,
-modify `server/app.py` to use factory mode:
-
-```python
-# In server/app.py - use factory mode for concurrent sessions
-app = create_app(
-    MyEnvironment,  # Pass class, not instance
-    MyAction,
-    MyObservation,
-    max_concurrent_envs=4,  # Allow 4 concurrent sessions
-)
-```
-
-Then multiple clients can connect simultaneously:
-
-```python
-from my_env import MyAction, MyEnv
-from concurrent.futures import ThreadPoolExecutor
-
-def run_episode(client_id: int):
-    with MyEnv(base_url="http://localhost:8000") as env:
-        result = env.reset()
-        for i in range(10):
-            result = env.step(MyAction(message=f"Client {client_id}, step {i}"))
-        return client_id, result.observation.message_length
-
-# Run 4 episodes concurrently
-with ThreadPoolExecutor(max_workers=4) as executor:
-    results = list(executor.map(run_episode, range(4)))
-```
-
-## Development & Testing
-
-### Direct Environment Testing
-
-Test the environment logic directly without starting the HTTP server:
-
-```bash
-# From the server directory
-python3 server/my_env_environment.py
-```
-
-This verifies that:
-- Environment resets correctly
-- Step executes actions properly
-- State tracking works
-- Rewards are calculated correctly
-
-### Running Locally
-
-Run the server locally for development:
-
-```bash
-uvicorn server.app:app --reload
-```
-
-## Project Structure
+## 🏗️ Architecture
 
 ```
 my_env/
-├── .dockerignore         # Docker build exclusions
-├── __init__.py            # Module exports
-├── README.md              # This file
-├── openenv.yaml           # OpenEnv manifest
-├── pyproject.toml         # Project metadata and dependencies
-├── uv.lock                # Locked dependencies (generated)
-├── client.py              # MyEnv client
-├── models.py              # Action and Observation models
-└── server/
-    ├── __init__.py        # Server module exports
-    ├── my_env_environment.py  # Core environment logic
-    ├── app.py             # FastAPI application (HTTP + WebSocket endpoints)
-    └── Dockerfile         # Container image definition
+├── env.py                    # Core GridEnv: wind, fog, maze, objectives, replay
+├── models.py                 # Pydantic observation/action models  
+├── grader.py                 # Deterministic scoring + 4 task definitions
+├── server/
+│   ├── app.py               # FastAPI: OpenEnv + Hackathon endpoints
+│   ├── my_env_environment.py # OpenEnv session wrapper
+│   └── static/
+│       └── index.html       # Full visual dashboard (SVG, Chart.js, Canvas)
 ```
+
+---
+
+*Built for the Meta OpenEnv Hackathon 2026 — Pathos AI demonstrates real-world utility, creative design, and comprehensive LLM-agent evaluation capabilities.*
