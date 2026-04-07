@@ -6,7 +6,7 @@ colorTo: purple
 sdk: docker
 pinned: true
 license: mit
-short_description: Grid-world RL environment for autonomous drone rescue with curriculum learning
+short_description: Drone rescue RL environment with curriculum learning
 ---
 
 # 🚁 Pathos AI — Autonomous Drone Rescue Simulator
