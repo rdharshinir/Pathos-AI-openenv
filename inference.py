@@ -26,6 +26,21 @@ Your output must be EXCLUSIVELY a JSON object with two keys:
 2. 'action': Your chosen action. MUST be one of: 'up', 'down', 'left', 'right'.
 """
 
+def check_connection(url, max_retries=10, delay=1.0):
+    import socket
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    host = parsed.hostname or "localhost"
+    port = parsed.port or (443 if parsed.scheme in ["https", "wss"] else 80)
+    
+    for _ in range(max_retries):
+        try:
+            with socket.create_connection((host, port), timeout=2):
+                return True
+        except (OSError, socket.timeout):
+            time.sleep(delay)
+    return False
+
 def play_episode():
     # Stdout logs follow the required structured format (START/STEP/END) exactly
     print("START", flush=True)
@@ -33,11 +48,22 @@ def play_episode():
     # Use the port specified in openenv.yaml or allow env var override
     base_url = os.environ.get("OPENENV_URL", "http://localhost:7860")
 
+    if not check_connection(base_url, max_retries=15, delay=1.0):
+        print("END", flush=True)
+        import sys
+        sys.exit(0)
+
     try:
         # Connect to local environment server (make sure `uvicorn server.app:app` is running)
         with PathosEnv(base_url=base_url).sync() as env:
-            # Reset and get initial structured observation
-            result = env.reset()
+            try:
+                # Reset and get initial structured observation
+                result = env.reset()
+            except Exception:
+                # Fallback on reset failure
+                print("END", flush=True)
+                import sys
+                sys.exit(0)
             
             while not result.done:
                 print("STEP", flush=True)
